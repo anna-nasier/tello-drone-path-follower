@@ -30,11 +30,13 @@ def find_paper(image_path):
 
             epsilon = 0.005 * cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, epsilon, True)
-
+            print(len(approx))
             if len(approx) == 4:
                 if cv2.contourArea(approx) > max_area:
                     cv2.drawContours(image, [approx], -1, (0, 255, 0), 2)
                     break
+                else: 
+                    return image
     for point in approx:
         x, y = point[0]
         cv2.circle(image, (x, y), 5, (255, 0, 0), -1) 
