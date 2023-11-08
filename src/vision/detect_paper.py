@@ -22,26 +22,26 @@ def find_paper(image_path):
     kernel = np.ones((3,3))
     edges = cv2.dilate(edges, kernel, iterations=2)
     cv2.imshow('edges', edges)
+    cv2.waitKey(0)
     contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     max_area = 600
 
     if contours is not None:
         for contour in contours:
 
-            epsilon = 0.005 * cv2.arcLength(contour, True)
+            epsilon = 0.02 * cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, epsilon, True)
-            print(len(approx))
             if len(approx) == 4:
                 if cv2.contourArea(approx) > max_area:
                     cv2.drawContours(image, [approx], -1, (0, 255, 0), 2)
                     break
-                else: 
-                    return image
     for point in approx:
         x, y = point[0]
         cv2.circle(image, (x, y), 5, (255, 0, 0), -1) 
 
+    print(approx, np.float32(approx))
     paper_corners = np.float32(approx)
+    print(paper_corners)
     width, height = image.shape[1], image.shape[0]
     target_corners = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
 
@@ -53,4 +53,4 @@ def find_paper(image_path):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-find_paper("trasa3.jpg")
+find_paper("trasa4.jpg")
