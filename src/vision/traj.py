@@ -10,7 +10,7 @@ def resize_frame(image):
 
     return resized_image
 
-image = cv2.imread('trasa5.jpg')
+image = cv2.imread('trasa1.jpg')
 image = resize_frame(image)
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
