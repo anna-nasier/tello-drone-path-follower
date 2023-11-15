@@ -46,7 +46,7 @@ def generate_launch_description():
     
     return launch.LaunchDescription([
         DeclareLaunchArgument("use_multithread", default_value="false"), # changed from true 
-        container,
+        # container,
         pub
         # map_to_map_optitrack
         ])

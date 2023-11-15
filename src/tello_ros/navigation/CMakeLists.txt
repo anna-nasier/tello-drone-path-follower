@@ -49,16 +49,29 @@ if(BUILD_TESTING)
 endif()
 
 # Install Python modules
-ament_python_install_package(scripts)
+# ament_python_install_package(scripts)
+ament_python_install_package(${PROJECT_NAME})
 
 install(DIRECTORY
+  launch
+  DESTINATION install/${PROJECT_NAME}
+)
+install(DIRECTORY
   scripts
-  share/${PROJECT_NAME}
+  DESTINATION install/${PROJECT_NAME}
 )
 # Install Python executables
 install(PROGRAMS
   scripts/publisher.py
-  DESTINATION lib/${PROJECT_NAME}
+  DESTINATION lib/${PROJECT_NAME}/
 )
+
+
+# Export package dependencies
+ament_export_dependencies(ament_cmake)
+ament_export_dependencies(ament_cmake_python)
+ament_export_dependencies(rclcpp)
+ament_export_dependencies(rclpy)
+ament_export_include_directories(include ${rclcpp_INCLUDE_DIRS})
 
 ament_package()

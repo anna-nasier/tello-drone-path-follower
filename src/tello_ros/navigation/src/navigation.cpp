@@ -68,7 +68,7 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     twist.linear.x = 0.0;
     twist.linear.y = 0.0;
     twist.angular.z = 0.0;
-    cmd_vel_pub_->publish(twist)
+    cmd_vel_pub_->publish(twist);
 
 }
 void Navigation::flight_data_callback(const tello_msgs::msg::FlightData::SharedPtr msg)

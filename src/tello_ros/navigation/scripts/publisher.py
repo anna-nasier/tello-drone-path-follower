@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseArray
+from geometry_msgs.msg import PoseArray, Pose
 
 
 class MinimalPublisher(Node):
@@ -17,9 +17,10 @@ class MinimalPublisher(Node):
 
     def timer_callback(self):
         msg = PoseArray()
-        msg.header = self.get_clock().now().to_msg()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        # 
         for i in range(5):
-            x, y, z, qx, qy, qz, qw = 0.5*i, 0, 0, 0, 0, 0, 1 # set Pose values
+            x, y, z, qx, qy, qz, qw = 0.5*i, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 # set Pose values
             pose = Pose() # create a new Pose message
             pose.position.x, pose.position.y, pose.position.z = x, y, z
             pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
