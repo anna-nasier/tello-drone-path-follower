@@ -2,14 +2,53 @@ import cv2
 import numpy as np 
 # from detect_paper import find_paper
 
-def resize_frame(image): 
-    scale = 40
+def resize_frame(image, scale=50): 
     dim = (int(image.shape[1] * scale / 100),
             int(image.shape[0] * scale / 100))
     resized_image = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
 
     return resized_image
 
+
+def find_conts(img): 
+    grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    grey = cv2.GaussianBlur(grey,(5,5),cv2.BORDER_DEFAULT)
+    _, th = cv2.threshold(grey, 127, 255, cv2.THRESH_BINARY)
+    kernel = np.ones((5, 5), np.uint8)
+    th = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel)
+    cont, _ = cv2.findContours(th, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    return cont
+
+def find_start(x, img):
+    conts = find_conts(img)
+    ret = []
+    for cont in conts:
+        ret.append( cv2.matchShapes(x, cont, 1, 0.0))
+    idx = ret.index((max(ret)))
+    beginning = conts[idx]
+    cv2.drawContours(img, conts[7], -1, (0,255,0), 3)
+    cv2.imshow('stat', img)
+    cv2.waitKey(0)
+
+def sort_rectangle(rect): 
+    maxim = np.amax(rect, 0)
+    width, height = maxim[0]
+    left = []
+    top = []
+    for point in rect: 
+        x,y = point[0]
+        if y < height/2 and x < width/2 :
+            one = point
+        if y < height/2 and x > width/2:
+            two = point
+        if y > height/2 and x > width/2:
+            three = point
+        if y > height/2 and x < width/2:
+            four = point
+    paper = np.float32([one, two, three, four])
+    # paper = ([one, two, three, four])
+    # print(paper)
+    return paper
 
 def find_paper(image_path):
 
@@ -23,55 +62,62 @@ def find_paper(image_path):
     edges = cv2.Canny(blurred, 50, 150)
     kernel = np.ones((3,3))
     edges = cv2.dilate(edges, kernel, iterations=2)
-    # cv2.imshow('edges', edges)
+    cv2.imshow('edges', edges)
     cv2.waitKey(0)
     contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    max_area = 600
+    max_area = 2000
 
     if contours is not None:
         for contour in contours:
 
-            epsilon = 0.005 * cv2.arcLength(contour, True)
+            epsilon = 0.01 * cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, epsilon, True)
-            print(len(approx))
             if len(approx) == 4:
-                print('approx 4')
                 if cv2.contourArea(approx) > max_area:
-                    # cv2.drawContours(image, [approx], -1, (0, 255, 0), 2)
                     is_paper = True
                     paper = approx
+                    # print(approx, type(approx))
                     
             
         if is_paper: 
-            paper_corners = np.float32(paper)
+            paper_sorted = sort_rectangle(paper)
+            print(paper_sorted)
             width, height = image.shape[1], image.shape[0]
             target_corners = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
-            perspective_matrix = cv2.getPerspectiveTransform(paper_corners, target_corners)
+            perspective_matrix = cv2.getPerspectiveTransform(paper_sorted, target_corners)
             transformed_image = cv2.warpPerspective(image, perspective_matrix, (width, height))
-            # cv2.imshow("Paper Detection", image)
-            # cv2.imshow("Transformed Image", transformed_image)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
+            cv2.imshow("Paper Detection", image)
+            cv2.imshow("Transformed Image", transformed_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
             
-    return transformed_image
+            return transformed_image
+            # return roi
+        else: 
+            return image
 
 
-def find_lines(image):
+def find_lines(image, x):
 
-    cv2.imshow('findlines', image)
+    image = cv2.GaussianBlur(image,(5,5),cv2.BORDER_DEFAULT)
+    image = resize_frame(image)
+    kernel = np.ones((5, 5), np.uint8)
+    image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+    height, width = image.shape[:2] 
+
+    find_start(x, image)
+
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    cv2.imshow('hsv', hsv)
-
+    grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     lower_red = np.array([0, 50, 50])
     upper_red = np.array([10, 255, 255])
 
-    lower_blue = np.array([100, 50, 50])
+    lower_blue = np.array([100, 40, 40])
     upper_blue = np.array([130, 255, 255])
 
     lower_green = np.array([40, 40, 40])
     upper_green = np.array([80, 255, 255])
-
 
     mask_red = cv2.inRange(hsv, lower_red, upper_red)
     mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
@@ -84,7 +130,7 @@ def find_lines(image):
 
     # Extract and print the coordinates of the lines
     for contour in contours_red:
-        if cv2.contourArea(contour) > 40:  # Filter out small noise
+        if cv2.contourArea(contour) > 60:
             x, y, w, h = cv2.boundingRect(contour)
             cv2.circle(image, (x,y), 2, (0,0,255), -1)
             cv2.circle(image, (x+w,y+ h), 2, (0,0,255), -1)
@@ -109,9 +155,13 @@ def find_lines(image):
     cv2.destroyAllWindows()
 
 
-# image = cv2.imread('trasa3.jpg')
+image = cv2.imread('x.jpg')
+x = find_conts(image)
+x = x[0]
+
+
 # image = resize_frame(image.copy())
 # cv2.imshow("gowno", image)
 
-trajmap = find_paper('trasa3.jpg')
-find_lines(trajmap)
+trajmap = find_paper('trasax.jpg')
+find_lines(trajmap, x)
