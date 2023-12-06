@@ -9,7 +9,12 @@ from launch_ros.descriptions import ComposableNode
 
 def generate_launch_description():
     pub = Node(name = "minimal_publisher", package = "navigation", executable = "publisher.py")
-
+    nav = Node(
+            package='navigation',
+            # namespace='turtlesim1',
+            executable='cpp_executable',
+            name='navigation_node'
+        )
     # navigation_cmd = Node(
     #         package='navigation',
     #         executable='navigation_node',
@@ -30,8 +35,8 @@ def generate_launch_description():
 
     # return ld
     composable_node = ComposableNode(
-        name='nav',
-        package='navigation', plugin='navigation_node',
+        name='navigation_node',
+        package='navigation', plugin='Navigation',
         parameters=[{'use_sim_time': True}]
         )
     container = ComposableNodeContainer(
@@ -47,6 +52,7 @@ def generate_launch_description():
     return launch.LaunchDescription([
         DeclareLaunchArgument("use_multithread", default_value="false"), # changed from true 
         # container,
-        pub
+        pub,
+        nav
         # map_to_map_optitrack
         ])

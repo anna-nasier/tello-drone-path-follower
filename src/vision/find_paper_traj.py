@@ -1,6 +1,5 @@
 import cv2
 import numpy as np 
-from line import Line3D
 # from detect_paper import find_paper
 
 def resize_frame(image): 
@@ -15,6 +14,7 @@ def resize_frame(image):
 def find_paper(image_path):
 
     image = cv2.imread(image_path)
+    image = resize_frame(image)
 
     is_paper = False
 
@@ -43,12 +43,7 @@ def find_paper(image_path):
                     
             
         if is_paper: 
-<<<<<<< HEAD
             paper_corners = np.float32(paper)
-=======
-            paper_sorted = sort_rectangle(paper)
-            print(paper_sorted)
->>>>>>> 3e36594 (sort points)
             width, height = image.shape[1], image.shape[0]
             target_corners = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
             perspective_matrix = cv2.getPerspectiveTransform(paper_corners, target_corners)
@@ -64,18 +59,9 @@ def find_paper(image_path):
 def find_lines(image):
 
     cv2.imshow('findlines', image)
-    image = cv2.GaussianBlur(image,(5,5),cv2.BORDER_DEFAULT)
-    image = resize_frame(image)
-    kernel = np.ones((5, 5), np.uint8)
-    image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
-    height, width = image.shape[:2] 
-
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     cv2.imshow('hsv', hsv)
-    grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    lower_black = np.array([0, 0, 0]) 
-    upper_black = np.array([180, 255, 50])
 
     lower_red = np.array([0, 50, 50])
     upper_red = np.array([10, 255, 255])
@@ -86,62 +72,37 @@ def find_lines(image):
     lower_green = np.array([40, 40, 40])
     upper_green = np.array([80, 255, 255])
 
-    mask_black = cv2.inRange(hsv, lower_black, upper_black)
+
     mask_red = cv2.inRange(hsv, lower_red, upper_red)
     mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
     mask_green = cv2.inRange(hsv, lower_green, upper_green)
 
-    cv2.imshow('black', mask_black)
-    cv2.waitKey(0)
 
-    contours_black, _ = cv2.findContours(mask_black, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours_red, _ = cv2.findContours(mask_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours_blue, _ = cv2.findContours(mask_blue, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours_green, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    lines = []
-    for contour in contours_black:
+
+    # Extract and print the coordinates of the lines
+    for contour in contours_red:
         if cv2.contourArea(contour) > 40:  # Filter out small noise
             x, y, w, h = cv2.boundingRect(contour)
-            cv2.circle(image, (x,y), 2, (0,0,0), -1)
+            cv2.circle(image, (x,y), 2, (0,0,255), -1)
             cv2.circle(image, (x+w,y+ h), 2, (0,0,255), -1)
-            line = Line3D(x, y, 1, x+w, y+h, 'black')
-            line.calculate_world(width, height)
-            lines.append(line)
-            print("Black Line: x={}, y={}, w={}, h={}".format(x, y, w, h))
-
-    lines = []
-    for contour in contours_red:
-        if cv2.contourArea(contour) > 60:  # Filter out small noise
-            x, y, w, h = cv2.boundingRect(contour)
-            line = Line3D(x, y, 1, x+w, y+h, 'red')
-            if line.calculate_length() > 60:
-                cv2.circle(image, (x,y), 2, (0,0,255), -1)
-                cv2.circle(image, (x+w,y+ h), 2, (0,0,255), -1)
-                line.calculate_world(width, height)
-                lines.append(line)
-                print(line.__dict__)
+            print("Red Line: x={}, y={}, w={}, h={}".format(x, y, w, h))
 
     for contour in contours_blue:
-        if cv2.contourArea(contour) > 60: 
+        if cv2.contourArea(contour) > 40: 
             x, y, w, h = cv2.boundingRect(contour)
-            line = Line3D(x, y, 1.5, x+w, y+h, 'blue')
-            if line.calculate_length() > 60:
-                cv2.circle(image, (x,y), 2, (255,0,0), -1)
-                cv2.circle(image, (x+w,y+ h), 2, (255,0,0), -1)
-                line.calculate_world(width, height)
-                lines.append(line)
-                print(line.__dict__)
+            cv2.circle(image, (x,y), 2, (255,0,0), -1)
+            cv2.circle(image, (x+w,y+ h), 2, (255,0,0), -1)
+            print("Blue Line: x={}, y={}, w={}, h={}".format(x, y, w, h))
 
     for contour in contours_green:
-        if cv2.contourArea(contour) > 60:  
-            line = Line3D(x, y, 1.5, x+w, y+h, 'blue')
+        if cv2.contourArea(contour) > 40:  
             x, y, w, h = cv2.boundingRect(contour)
-            if line.calculate_length() > 60:
-                cv2.circle(image, (x,y), 2, (0, 255, 0), -1)
-                cv2.circle(image, (x+w,y+ h), 2, (0, 255, 0), -1)
-                line.calculate_world(width, height)
-                lines.append(line)
-                print(line.__dict__)
+            cv2.circle(image, (x,y), 2, (0, 255, 0), -1)
+            cv2.circle(image, (x+w,y+ h), 2, (0, 255, 0), -1)
+            print("Green Line: x={}, y={}, w={}, h={}".format(x, y, w, h))
 
     cv2.imshow("Image", image)
     cv2.waitKey(0)
@@ -152,5 +113,5 @@ def find_lines(image):
 # image = resize_frame(image.copy())
 # cv2.imshow("gowno", image)
 
-trajmap = find_paper('trasa10.jpg')
+trajmap = find_paper('trasa3.jpg')
 find_lines(trajmap)
