@@ -1,1 +1,4 @@
 __pycache__
+src/vision
+rosbags
+tello_ws

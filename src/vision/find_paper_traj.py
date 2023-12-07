@@ -9,6 +9,12 @@ def resize_frame(image, scale=50):
 
     return resized_image
 
+def gamma_correction(image, gamma=1.5):
+    gamma_inv = 1.0 / gamma
+    look_up_table = np.array([((i / 255.0) ** gamma_inv) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
+    gamma_corrected = cv2.LUT(image, look_up_table)
+    return gamma_corrected
+
 
 def find_conts(img): 
     grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -26,7 +32,7 @@ def find_start(x, img):
         ret.append( cv2.matchShapes(x, cont, 1, 0.0))
     idx = ret.index((max(ret)))
     beginning = conts[idx]
-    cv2.drawContours(img, conts[7], -1, (0,255,0), 3)
+    # cv2.drawContours(img, conts, -1, (0,255,0), 3)
     cv2.imshow('stat', img)
     cv2.waitKey(0)
 
@@ -80,6 +86,7 @@ def find_paper(image_path):
                     
             
         if is_paper: 
+            print(paper)
             paper_sorted = sort_rectangle(paper)
             print(paper_sorted)
             width, height = image.shape[1], image.shape[0]
@@ -100,9 +107,9 @@ def find_paper(image_path):
 def find_lines(image, x):
 
     image = cv2.GaussianBlur(image,(5,5),cv2.BORDER_DEFAULT)
-    image = resize_frame(image)
-    kernel = np.ones((5, 5), np.uint8)
-    image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+    # image = resize_frame(image)
+    # kernel = np.ones((5, 5), np.uint8)
+    # image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
     height, width = image.shape[:2] 
 
     find_start(x, image)
@@ -155,7 +162,7 @@ def find_lines(image, x):
     cv2.destroyAllWindows()
 
 
-image = cv2.imread('x.jpg')
+image = cv2.imread('x.png')
 x = find_conts(image)
 x = x[0]
 
@@ -163,5 +170,5 @@ x = x[0]
 # image = resize_frame(image.copy())
 # cv2.imshow("gowno", image)
 
-trajmap = find_paper('trasax.jpg')
+trajmap = find_paper('test.png')
 find_lines(trajmap, x)
