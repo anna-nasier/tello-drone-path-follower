@@ -1,4 +1,7 @@
 import math
+import cv2
+import numpy as np 
+
 
 class Line3D:
     def __init__(self, x1=0, y1=0, z=0, x2=0, y2=0, color = None):
@@ -65,12 +68,10 @@ def find_close_points(lines, proximity_threshold):
 
     return close_points
 
-def find_lines(image, x):
+def find_lines(image):
 
     image = cv2.GaussianBlur(image,(5,5),cv2.BORDER_DEFAULT)
     height, width = image.shape[:2] 
-
-    # find_start(x, image)
 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -107,7 +108,7 @@ def find_lines(image, x):
     for contour in contours_blue:
         if cv2.contourArea(contour) > 60: 
             x, y, w, h = cv2.boundingRect(contour)
-            line = Line3D(x, y, 1.5, x+w, y+h, 'blue')
+            line = Line3D(x, y, 0.5, x+w, y+h, 'blue')
             if line.calculate_length() > 60:
                 cv2.circle(image, (x,y), 2, (255,0,0), -1)
                 cv2.circle(image, (x+w,y+ h), 2, (255,0,0), -1)
@@ -116,24 +117,11 @@ def find_lines(image, x):
 
     for contour in contours_green:
         if cv2.contourArea(contour) > 60:  
-            line = Line3D(x, y, 1.5, x+w, y+h, 'blue')
+            line = Line3D(x, y, 1.5, x+w, y+h, 'green')
             x, y, w, h = cv2.boundingRect(contour)
             if line.calculate_length() > 60:
                 cv2.circle(image, (x,y), 2, (0, 255, 0), -1)
                 cv2.circle(image, (x+w,y+ h), 2, (0, 255, 0), -1)
                 line.calculate_world(width, height)
                 lines.append(line)
-
-    cv2.imshow("Image", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-# Example usage:
-# line1 = Line3D(1, 2, 3, 4, 5, 6)
-# line2 = Line3D(2, 3, 4, 5, 6, 7)
-# line3 = Line3D(7, 8, 9, 10, 11, 12)
-
-# lines = [line1, line2, line3]
-
-# # Find points close to each line within a proximity threshold of 2.0
-# close_points = find_close_points(lines, 2.0)
-# print(close_points)
+    return image, lines

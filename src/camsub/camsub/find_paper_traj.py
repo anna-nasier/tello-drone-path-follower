@@ -1,5 +1,6 @@
 import cv2
 import numpy as np 
+from scipy.spatial import distance as dist
 # from line import Line3D
 # from detect_paper import find_paper
 
@@ -37,29 +38,25 @@ def find_start(x, img):
     cv2.imshow('stat', img)
     cv2.waitKey(0)
 
+# def sort_rectangle(rect): 
+#     x,y,w,h = rect
+#     one = [x, y]
+#     two = [x+w, y]
+#     three = [x+w, y+h]
+#     four = [x, y+h]
+#     paper = np.float32([one, two, three, four])
+#     return paper
+
 def sort_rectangle(rect): 
-    maxim = np.amax(rect, 0)
-    width, height = maxim[0]
-    left = []
-    top = []
-    one = [0,0]
-    two = [width, 0]
-    three = [width, height]
-    four = [0, height]
-    for point in rect: 
-        x,y = point[0]
-        if y < height/2 and x < width/2 :
-            one = [x,y]
-        if y < height/2 and x > width/2:
-            two = [x,y]
-        if y > height/2 and x > width/2:
-            three = [x,y]
-        if y > height/2 and x < width/2:
-            four = [x,y]
+    x,y,w,h = rect
+    offset = 30
+    one = [x+offset, y+offset]
+    two = [x+w-offset, y+offset]
+    three = [x+w-offset, y+h-offset]
+    four = [x+ offset, y+h - offset]
     paper = np.float32([one, two, three, four])
-    # paper = ([one, two, three, four])
-    # print(paper)
     return paper
+
 
 def find_paper(image):
 
@@ -70,38 +67,23 @@ def find_paper(image):
     edges = cv2.Canny(blurred, 50, 150)
     kernel = np.ones((3,3))
     edges = cv2.dilate(edges, kernel, iterations=2)
-    # cv2.imshow('edges', edges)
-    # cv2.waitKey(0)
     contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     max_area = 2000
-
     if contours is not None:
         for contour in contours:
-
             epsilon = 0.01 * cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, epsilon, True)
             if len(approx) == 4:
                 if cv2.contourArea(approx) > max_area:
                     is_paper = True
-                    paper = approx
+                    paper = cv2.boundingRect(approx)
             
         if is_paper: 
             paper_sorted = sort_rectangle(paper)
             width, height = image.shape[1], image.shape[0]
             target_corners = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
             perspective_matrix = cv2.getPerspectiveTransform(paper_sorted, target_corners)
-            transformed_image = cv2.warpPerspective(image, perspective_matrix, (width, height))
-            # cv2.imshow("Paper Detection", image)
-            # cv2.imshow("Transformed Image", transformed_image)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-            
+            transformed_image = cv2.warpPerspective(image, perspective_matrix, (width, height))            
             return transformed_image, is_paper
         else: 
             return image, is_paper
-
-
-
-# image = cv2.imread('x.png')
-# x = find_conts(image)
-# x = x[0]
