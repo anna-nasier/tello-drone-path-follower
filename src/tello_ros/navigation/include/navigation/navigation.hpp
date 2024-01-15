@@ -8,6 +8,7 @@
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <tello_msgs/msg/flight_data.hpp>
 #include <gazebo_msgs/msg/model_states.hpp>
+#include "tello_msgs/srv/tello_action.hpp"
 
 
 #include "tf2/transform_datatypes.h"
@@ -34,6 +35,7 @@ class Navigation : public rclcpp::Node
         std::string path_topic_name_;
 
         bool odom_started = false;
+        bool simulation = true;
         int start = 0;
 
 
@@ -57,6 +59,8 @@ class Navigation : public rclcpp::Node
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
         void pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg);
         void flight_data_callback(const gazebo_msgs::msg::ModelStates::SharedPtr msg);
+
+        rclcpp::Client<tello_msgs::srv::TelloAction>::SharedPtr client;
 };
 
 #endif // NAVIGATION_NODE_HPP

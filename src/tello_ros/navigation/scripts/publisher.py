@@ -42,26 +42,27 @@ class MinimalPublisher(Node):
         timer_period = 0.001  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
+        self.simulation = True
         # def optitrack(queue: Queue, run_process: Value):
         # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         #     s.bind(('0.0.0.0', int(CLIENT_PORT)))
         
+        if not self.simulation:
+            # values
+            ip = "192.168.110.2"
+            port = 12111
 
-        # values
-        ip = "192.168.110.2"
-        port = 12111
+            # create socket
+            self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        # create socket
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # allow multiple use of the same socket
+            self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        # allow multiple use of the same socket
-        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # bind socket
+            self.s.bind((ip,port))
 
-        # bind socket
-        self.s.bind((ip,port))
-
-        # add socket to multicast group
-        # self.s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+            # add socket to multicast group
+            # self.s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 
 
@@ -70,8 +71,10 @@ class MinimalPublisher(Node):
         self.get_logger().info(f"{msg}" )
 
         msg.header.stamp = self.get_clock().now().to_msg()
-        x_list = [0.2, 0.2, 0.4, 0.4, 0.6]
-        y_list = [0.0, 0.2, 0.2, -0.2, 0.0]
+        # x_list = [0.6, 0.6, 1.2, 1.2, 1.8]
+        # y_list = [0.0, 0.6, 0.6, -0.6, 0.0]
+        x_list = [0.6, 1.2, 1.8, 1.8, 2.4]
+        y_list = [0.0, -1.0, 1.6, 0.0, 0.0]
         # 
         for i in range(5):
             x, y, z, qx, qy, qz, qw = x_list[i], y_list[i], 0.0, 0.0, 0.0, 0.0, 1.0 # set Pose values
@@ -80,67 +83,68 @@ class MinimalPublisher(Node):
             pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
             msg.poses.append(pose) # add the new Pose object to the PoseArray list
         self.publisher_.publish(msg)
-        # self.get_logger().info('Publishing path : ')
+        self.get_logger().info('Publishing path : ')
         
-        data = self.s.recvfrom(1024)[0]
-        data1 = json.loads(data)
-        # recieve data
-        # data, addr = s.recvfrom(10240)
-            
-        # print data
-        # data= {'rigid_bodies': 1, 'QDrone': [1, -0.545882, 0.010438, 0.115418, -0.001515, -0.000244, -0.000377]}
-        QDrone_values = data1["Tello"]
-        self.get_logger().info(f'Recived data :{QDrone_values} ')
-        # Przypisanie wartości do osobnych zmiennych
-        # Przypisanie wartości do osobnych zmiennych
-        a, b, c, d, e, f, g, _ = QDrone_values
-        # [a, b, c, d, e, f, g, h, i, j, k, l] = struct.unpack('ffffffffffff', data)
-        # self.get_logger().info(f" a {a}")
-        # self.get_logger().info(f" b {b}")
+        if not self.simulation: #jezeli nie symulacja to pobieramy dane
+            data = self.s.recvfrom(1024)[0]
+            data1 = json.loads(data)
+            # recieve data
+            # data, addr = s.recvfrom(10240)
+                
+            # print data
+            # data= {'rigid_bodies': 1, 'QDrone': [1, -0.545882, 0.010438, 0.115418, -0.001515, -0.000244, -0.000377]}
+            QDrone_values = data1["Tello"]
+            self.get_logger().info(f'Recived data :{QDrone_values} ')
+            # Przypisanie wartości do osobnych zmiennych
+            # Przypisanie wartości do osobnych zmiennych
+            a, b, c, d, e, f, g, _ = QDrone_values
+            # [a, b, c, d, e, f, g, h, i, j, k, l] = struct.unpack('ffffffffffff', data)
+            # self.get_logger().info(f" a {a}")
+            # self.get_logger().info(f" b {b}")
 
-        widocznosc = a
-        x = b
-        y = c
-        z = d
-        roll = e
-        pitch = f
-        yaw = g
-        # roll = -h
-        # yaw = i
-        # pitch = -j
-        # bodyID = k
-        # framecount = l
+            widocznosc = a
+            x = b
+            y = c
+            z = d
+            roll = e
+            pitch = f
+            yaw = g
+            # roll = -h
+            # yaw = i
+            # pitch = -j
+            # bodyID = k
+            # framecount = l
 
-        quat = get_quaternion_from_euler(roll, pitch, yaw)
-        qx = quat[0]
-        qy = quat[1]
-        qz = quat[2]
-        qw = quat[3]
+            quat = get_quaternion_from_euler(roll, pitch, yaw)
+            qx = quat[0]
+            qy = quat[1]
+            qz = quat[2]
+            qw = quat[3]
 
-        self.get_logger().info(f'x = {x}, y = {y}, z = {z} \n qx = {qx}, qy = {qy}, qz = {qz}, qw = {qw} \n ')
+            self.get_logger().info(f'x = {x}, y = {y}, z = {z} \n qx = {qx}, qy = {qy}, qz = {qz}, qw = {qw} \n ')
 
-        msg_gz = ModelStates()
-        # print(msg_gz)
-        # self.get_logger().info(f"{msg_gz}" )
-        # self.get_logger().info(f"{msg_gz.pose}" )
+            msg_gz = ModelStates()
+            # print(msg_gz)
+            # self.get_logger().info(f"{msg_gz}" )
+            # self.get_logger().info(f"{msg_gz.pose}" )
 
-        if widocznosc:
-            # msg_gz.pose
-            pose_gz = Pose() # create a new Pose message
-            
+            if widocznosc:
+                # msg_gz.pose
+                pose_gz = Pose() # create a new Pose message
+                
 
-            pose_gz.position.x = float(x)
-            pose_gz.position.y = float(y)
-            pose_gz.position.z = float(z)
-            pose_gz.orientation.x = float(qx)
-            pose_gz.orientation.y = float(qy)
-            pose_gz.orientation.z = float(qz)
-            pose_gz.orientation.w = float(qw)
+                pose_gz.position.x = float(x)
+                pose_gz.position.y = float(y)
+                pose_gz.position.z = float(z)
+                pose_gz.orientation.x = float(qx)
+                pose_gz.orientation.y = float(qy)
+                pose_gz.orientation.z = float(qz)
+                pose_gz.orientation.w = float(qw)
 
-            # self.get_logger().info(f"pose gz {pose_gz}" )
+                # self.get_logger().info(f"pose gz {pose_gz}" )
 
-            msg_gz.pose = [pose_gz]
-            self.publisher_gz.publish(msg_gz)
+                msg_gz.pose = [pose_gz]
+                self.publisher_gz.publish(msg_gz)
 
 
 

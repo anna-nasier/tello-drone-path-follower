@@ -8,13 +8,31 @@ Navigation::Navigation() : Node("navigation_node")
     declare_parameter<std::string>("topics.path_topic_name", "path_topic_name_");
 
     path_topic_name_ = get_parameter("topics.path_topic_name").as_string();
+    client = this->create_client<tello_msgs::srv::TelloAction>("/drone1/tello_action");
+    if (!client->wait_for_service(std::chrono::seconds(5))) {
+      RCLCPP_ERROR(this->get_logger(), "Service not available.");
+    }
+    auto request = std::make_shared<tello_msgs::srv::TelloAction::Request>();
+    request->cmd = "takeoff";
+
+    // Send the request to the service and wait for the response
+    auto result_future = client->async_send_request(request);
+    // if (result_future.get()->success) {
+    //   RCLCPP_INFO(this->get_logger(), "Command 'takeoff' sent successfully.");
+    // } else {
+    //   RCLCPP_ERROR(this->get_logger(), "Failed to send 'takeoff' command.");
+    // }
  
 
     path_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseArray>("poses3d", 1, std::bind(&Navigation::pathCallback, this, std::placeholders::_1));
     flight_subscriber_ = this->create_subscription<gazebo_msgs::msg::ModelStates>("/gazebo/model_states", 1, std::bind(&Navigation::flight_data_callback, this, std::placeholders::_1));
     
-
-    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    if (simulation){
+      cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("drone1/cmd_vel", 1);
+    }
+    else{
+      cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    }
 }
 
 
@@ -30,6 +48,10 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
         twist.linear.y = 0.0;
         twist.angular.z = 0.0;
         cmd_vel_pub_->publish(twist);
+        auto request = std::make_shared<tello_msgs::srv::TelloAction::Request>();
+        request->cmd = "land";
+        auto result_future = client->async_send_request(request);
+
         return;
     }
     // RCLCPP_INFO(this->get_logger(), "Path Callback !!!");
@@ -105,7 +127,7 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     double ref_lin_vel_y = std::max(0.01, 0.25*projection);     
     ref_lin_vel_x = pose_x;
     ref_lin_vel_y = pose_y;
-    double max_vel_lin = 0.1;
+    double max_vel_lin = 0.02;
     if(ref_lin_vel_x > max_vel_lin)
       ref_lin_vel_x = max_vel_lin;
     if(ref_lin_vel_x < -max_vel_lin)
@@ -128,8 +150,10 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     cmd_ang_vel = 0.0; 
 
     RCLCPP_WARN_STREAM(this->get_logger(), "ang vel: " << cmd_ang_vel);  
+    RCLCPP_WARN_STREAM(this->get_logger(), "lin velx " << ref_lin_vel_x);  
+    RCLCPP_WARN_STREAM(this->get_logger(), "lin vely " << ref_lin_vel_y);  
 
-    double max_vel = 0.1;
+    double max_vel = 0.02;
     if(cmd_ang_vel > max_vel)
       cmd_ang_vel = max_vel;
     if(cmd_ang_vel < -max_vel)
@@ -162,20 +186,22 @@ void Navigation::flight_data_callback(const gazebo_msgs::msg::ModelStates::Share
     // this->roll_= msg->roll;
     // this->pitch_= msg->pitch;
     // this->yaw_= msg->yaw;
-    this->x_ = msg->pose[0].position.x;
-    this->y_ = msg->pose[0].position.y;
-    this->z_ = msg->pose[0].position.z;
+    int number = 0;
+    if (simulation){number = 1;}
+    this->x_ = msg->pose[number].position.x;
+    this->y_ = msg->pose[number].position.y;
+    this->z_ = msg->pose[number].position.z;
     // RCLCPP_ERROR_STREAM(this->get_logger(),"msg = :" << x_ << y_ <<z_);
 
 
     // this->x_ += msg->vgx*cos(this->yaw_)*time_diff - msg->vgy*sin(this->yaw_)*time_diff;
     // this->y_ += msg->vgx*sin(this->yaw_)*time_diff + msg->vgy*cos(this->yaw_)*time_diff;
-    this->qx_ = msg->pose[0].orientation.x;
-    this->qy_ = msg->pose[0].orientation.y;
-    this->qz_ = msg->pose[0].orientation.z;
-    this->qw_ = msg->pose[0].orientation.w;
+    this->qx_ = msg->pose[number].orientation.x;
+    this->qy_ = msg->pose[number].orientation.y;
+    this->qz_ = msg->pose[number].orientation.z;
+    this->qw_ = msg->pose[number].orientation.w;
     
-    RCLCPP_WARN_STREAM(this->get_logger(), "x" << this->x_); 
+    RCLCPP_WARN_STREAM(this->get_logger(), "x " << this->x_); 
 
 
     this->odom_started = true;
