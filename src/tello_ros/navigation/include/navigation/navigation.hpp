@@ -20,6 +20,14 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <string>
+// #include <format>/
+
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
 
 #include <cmath>
 
@@ -35,7 +43,7 @@ class Navigation : public rclcpp::Node
         std::string path_topic_name_;
 
         bool odom_started = false;
-        bool simulation = true;
+        bool simulation = false;
         int start = 0;
 
 
@@ -53,11 +61,14 @@ class Navigation : public rclcpp::Node
         double qw_;
 
         int index_;
+        geometry_msgs::msg::Twist twist_msg;
 
+        rclcpp::TimerBase::SharedPtr timer_;
         rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr path_subscriber_;
         rclcpp::Subscription<gazebo_msgs::msg::ModelStates>::SharedPtr flight_subscriber_;
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
         void pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg);
+        void timer_callback();
         void flight_data_callback(const gazebo_msgs::msg::ModelStates::SharedPtr msg);
 
         rclcpp::Client<tello_msgs::srv::TelloAction>::SharedPtr client;

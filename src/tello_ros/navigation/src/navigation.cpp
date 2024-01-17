@@ -1,14 +1,18 @@
 #include "navigation/navigation.hpp"
 // #include <tf2_eigen/tf2_eigen.hpp>
 
+
+
 Navigation::Navigation() : Node("navigation_node")
 {
     index_ = 0;
 
     declare_parameter<std::string>("topics.path_topic_name", "path_topic_name_");
 
+    // auto client = node->create_client<tello_msgs::srv::TelloAction>("/tello_action");
+
     path_topic_name_ = get_parameter("topics.path_topic_name").as_string();
-    client = this->create_client<tello_msgs::srv::TelloAction>("/drone1/tello_action");
+    client = this->create_client<tello_msgs::srv::TelloAction>("/tello_action");
     if (!client->wait_for_service(std::chrono::seconds(5))) {
       RCLCPP_ERROR(this->get_logger(), "Service not available.");
     }
@@ -23,7 +27,8 @@ Navigation::Navigation() : Node("navigation_node")
     //   RCLCPP_ERROR(this->get_logger(), "Failed to send 'takeoff' command.");
     // }
  
-
+    timer_ = this->create_wall_timer(
+      100ms, std::bind(&Navigation::timer_callback, this));
     path_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseArray>("poses3d", 1, std::bind(&Navigation::pathCallback, this, std::placeholders::_1));
     flight_subscriber_ = this->create_subscription<gazebo_msgs::msg::ModelStates>("/gazebo/model_states", 1, std::bind(&Navigation::flight_data_callback, this, std::placeholders::_1));
     
@@ -35,6 +40,23 @@ Navigation::Navigation() : Node("navigation_node")
     }
 }
 
+void Navigation::timer_callback()
+    {
+    //   cmd_vel_pub_->publish(twist_msg);
+    // RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
+      auto request = std::make_shared<tello_msgs::srv::TelloAction::Request>();
+      int x = twist_msg.linear.x;
+      int y = twist_msg.linear.y;
+      // std::string str = "rc 0 " +  std::to_string(x) +  " 0 0";
+      // std::string str = "rc "+  std::to_string(y*-1) + " 0 0 0";
+      std::string str = "rc "+  std::to_string(y*-1) + " " +  std::to_string(x) +  " 0 0";
+      request->cmd = str;
+      auto result_future = client->async_send_request(request);
+      // auto message = std_msgs::msg::String();e?
+      // message.data = "Hello, world! " + std::to_string(count_++);
+      // RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
+      // cmd_vel_pub_->publish(message);
+    }
 
 void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg)
 {
@@ -127,7 +149,7 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     double ref_lin_vel_y = std::max(0.01, 0.25*projection);     
     ref_lin_vel_x = pose_x;
     ref_lin_vel_y = pose_y;
-    double max_vel_lin = 0.02;
+    double max_vel_lin = 0.15;
     if(ref_lin_vel_x > max_vel_lin)
       ref_lin_vel_x = max_vel_lin;
     if(ref_lin_vel_x < -max_vel_lin)
@@ -153,7 +175,7 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     RCLCPP_WARN_STREAM(this->get_logger(), "lin velx " << ref_lin_vel_x);  
     RCLCPP_WARN_STREAM(this->get_logger(), "lin vely " << ref_lin_vel_y);  
 
-    double max_vel = 0.02;
+    double max_vel = 0.15;
     if(cmd_ang_vel > max_vel)
       cmd_ang_vel = max_vel;
     if(cmd_ang_vel < -max_vel)
@@ -162,16 +184,16 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
 
 
 
-    if(pose_x < 0.02 && pose_x > - 0.02 && pose_y < 0.02 && pose_y > -0.02){
+    if(pose_x < 0.10 && pose_x > - 0.10 && pose_y < 0.04 && pose_y > -0.04){
         this->start++;
     }
 
-    geometry_msgs::msg::Twist twist;
-    twist.linear.x = ref_lin_vel_x;
-    twist.linear.y = ref_lin_vel_y;
-    twist.angular.z = cmd_ang_vel;
-    cmd_vel_pub_->publish(twist);
-    RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
+    // geometry_msgs::msg::Twist twist;
+    twist_msg.linear.x = int(ref_lin_vel_x*100);
+    twist_msg.linear.y = int(ref_lin_vel_y*100);
+    twist_msg.angular.z = int(cmd_ang_vel*100);
+    // cmd_vel_pub_->publish(twist_msg);
+    // RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
 
 }
 void Navigation::flight_data_callback(const gazebo_msgs::msg::ModelStates::SharedPtr msg)
