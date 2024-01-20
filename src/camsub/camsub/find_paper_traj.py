@@ -27,29 +27,9 @@ def find_conts(img):
     cont, _ = cv2.findContours(th, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     return cont
 
-def find_start(x, img):
-    conts = find_conts(img)
-    ret = []
-    for cont in conts:
-        ret.append( cv2.matchShapes(x, cont, 1, 0.0))
-    idx = ret.index((max(ret)))
-    beginning = conts[idx]
-    # cv2.drawContours(img, conts, -1, (0,255,0), 3)
-    cv2.imshow('stat', img)
-    cv2.waitKey(0)
-
-# def sort_rectangle(rect): 
-#     x,y,w,h = rect
-#     one = [x, y]
-#     two = [x+w, y]
-#     three = [x+w, y+h]
-#     four = [x, y+h]
-#     paper = np.float32([one, two, three, four])
-#     return paper
-
 def sort_rectangle(rect): 
     x,y,w,h = rect
-    offset = 30
+    offset = 0
     one = [x+offset, y+offset]
     two = [x+w-offset, y+offset]
     three = [x+w-offset, y+h-offset]

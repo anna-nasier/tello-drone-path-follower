@@ -14,6 +14,8 @@
   <depend>std_msgs</depend>
   <depend>opencv2</depend>
   <depend>numpy</depend>
+  <depend>matplotlib</depend>
+  <depend>tkinter</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
