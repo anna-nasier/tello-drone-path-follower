@@ -25,6 +25,8 @@
 #include <memory>
 #include <string>
 // #include <format>/
+#include "pid.hpp"
+#include <stdio.h>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -43,7 +45,7 @@ class Navigation : public rclcpp::Node
         std::string path_topic_name_;
 
         bool odom_started = false;
-        bool simulation = false;
+        bool simulation = true;
         int start = 0;
 
 
@@ -59,6 +61,9 @@ class Navigation : public rclcpp::Node
         double qy_;
         double qz_;
         double qw_;
+
+        PID pid = PID(0.1, 100, -100, 0.1, 0.01, 0.5);
+        // ( double dt, double max, double min, double Kp, double Kd, double Ki );
 
         int index_;
         geometry_msgs::msg::Twist twist_msg;

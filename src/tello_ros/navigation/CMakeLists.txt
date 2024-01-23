@@ -28,7 +28,7 @@ find_package(tf2_eigen REQUIRED)
 find_package(tello_msgs REQUIRED)
 find_package(gazebo_msgs REQUIRED)
 
-add_executable(cpp_executable src/${PROJECT_NAME}.cpp src/${PROJECT_NAME}_node.cpp)
+add_executable(cpp_executable src/${PROJECT_NAME}.cpp src/${PROJECT_NAME}_node.cpp src/pid.cpp)
 target_include_directories(cpp_executable PUBLIC include)
 ament_target_dependencies(cpp_executable rclcpp geometry_msgs tello_msgs tf2_ros gazebo_msgs)
 
@@ -48,6 +48,11 @@ if(BUILD_TESTING)
   #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+)
 
 # Install Python modules
 # ament_python_install_package(scripts)

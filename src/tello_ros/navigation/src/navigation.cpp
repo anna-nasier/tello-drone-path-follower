@@ -12,7 +12,12 @@ Navigation::Navigation() : Node("navigation_node")
     // auto client = node->create_client<tello_msgs::srv::TelloAction>("/tello_action");
 
     path_topic_name_ = get_parameter("topics.path_topic_name").as_string();
-    client = this->create_client<tello_msgs::srv::TelloAction>("/tello_action");
+    if (simulation){
+      client = this->create_client<tello_msgs::srv::TelloAction>("/drone1/tello_action");
+    }
+    else{
+      client = this->create_client<tello_msgs::srv::TelloAction>("/tello_action");
+    }
     if (!client->wait_for_service(std::chrono::seconds(5))) {
       RCLCPP_ERROR(this->get_logger(), "Service not available.");
     }
@@ -42,20 +47,22 @@ Navigation::Navigation() : Node("navigation_node")
 
 void Navigation::timer_callback()
     {
-    //   cmd_vel_pub_->publish(twist_msg);
-    // RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
-      auto request = std::make_shared<tello_msgs::srv::TelloAction::Request>();
-      int x = twist_msg.linear.x;
-      int y = twist_msg.linear.y;
-      // std::string str = "rc 0 " +  std::to_string(x) +  " 0 0";
-      // std::string str = "rc "+  std::to_string(y*-1) + " 0 0 0";
-      std::string str = "rc "+  std::to_string(y*-1) + " " +  std::to_string(x) +  " 0 0";
-      request->cmd = str;
-      auto result_future = client->async_send_request(request);
-      // auto message = std_msgs::msg::String();e?
-      // message.data = "Hello, world! " + std::to_string(count_++);
-      // RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-      // cmd_vel_pub_->publish(message);
+      if (!simulation){
+        //   cmd_vel_pub_->publish(twist_msg);
+        // RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
+        auto request = std::make_shared<tello_msgs::srv::TelloAction::Request>();
+        int x = twist_msg.linear.x;
+        int y = twist_msg.linear.y;
+        // std::string str = "rc 0 " +  std::to_string(x) +  " 0 0";
+        // std::string str = "rc "+  std::to_string(y*-1) + " 0 0 0";
+        std::string str = "rc "+  std::to_string(y*-1) + " " +  std::to_string(x) +  " 0 0";
+        request->cmd = str;
+        auto result_future = client->async_send_request(request);
+        // auto message = std_msgs::msg::String();e?
+        // message.data = "Hello, world! " + std::to_string(count_++);
+        // RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
+        // cmd_vel_pub_->publish(message);
+      }
     }
 
 void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg)
@@ -184,14 +191,23 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
 
 
 
-    if(pose_x < 0.10 && pose_x > - 0.10 && pose_y < 0.04 && pose_y > -0.04){
+    if(pose_x < 0.05 && pose_x > - 0.05 && pose_y < 0.04 && pose_y > -0.04){
         this->start++;
     }
 
+    double ref_lin_vel_x_pid = pid.calculate(0, ref_lin_vel_x);
+    double ref_lin_vel_y_pid = pid.calculate(0, ref_lin_vel_y);
     // geometry_msgs::msg::Twist twist;
-    twist_msg.linear.x = int(ref_lin_vel_x*100);
-    twist_msg.linear.y = int(ref_lin_vel_y*100);
-    twist_msg.angular.z = int(cmd_ang_vel*100);
+    if (simulation){
+      twist_msg.linear.x = ref_lin_vel_x;
+      twist_msg.linear.y = ref_lin_vel_y;
+      twist_msg.angular.z = cmd_ang_vel;
+    }
+    else{
+      twist_msg.linear.x = int(ref_lin_vel_x*100);
+      twist_msg.linear.y = int(ref_lin_vel_y*100);
+      twist_msg.angular.z = int(cmd_ang_vel*100);
+    }  
     // cmd_vel_pub_->publish(twist_msg);
     // RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
 

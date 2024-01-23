@@ -42,7 +42,7 @@ class MinimalPublisher(Node):
         timer_period = 0.001  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
-        self.simulation = False
+        self.simulation = True
         # def optitrack(queue: Queue, run_process: Value):
         # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         #     s.bind(('0.0.0.0', int(CLIENT_PORT)))
