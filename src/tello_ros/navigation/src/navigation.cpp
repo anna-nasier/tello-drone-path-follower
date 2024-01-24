@@ -38,7 +38,7 @@ Navigation::Navigation() : Node("navigation_node")
     flight_subscriber_ = this->create_subscription<gazebo_msgs::msg::ModelStates>("/gazebo/model_states", 1, std::bind(&Navigation::flight_data_callback, this, std::placeholders::_1));
     
     if (simulation){
-      cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("drone1/cmd_vel", 1);
+      cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/drone1/cmd_vel", 1);
     }
     else{
       cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
@@ -156,7 +156,11 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     double ref_lin_vel_y = std::max(0.01, 0.25*projection);     
     ref_lin_vel_x = pose_x;
     ref_lin_vel_y = pose_y;
+    
     double max_vel_lin = 0.15;
+    if (simulation){
+      max_vel_lin = 0.02;
+    }
     if(ref_lin_vel_x > max_vel_lin)
       ref_lin_vel_x = max_vel_lin;
     if(ref_lin_vel_x < -max_vel_lin)
@@ -183,6 +187,9 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     RCLCPP_WARN_STREAM(this->get_logger(), "lin vely " << ref_lin_vel_y);  
 
     double max_vel = 0.15;
+    if (simulation){
+      max_vel = 0.02;
+    }
     if(cmd_ang_vel > max_vel)
       cmd_ang_vel = max_vel;
     if(cmd_ang_vel < -max_vel)
@@ -202,14 +209,15 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
       twist_msg.linear.x = ref_lin_vel_x;
       twist_msg.linear.y = ref_lin_vel_y;
       twist_msg.angular.z = cmd_ang_vel;
+      cmd_vel_pub_->publish(twist_msg);
+      RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
     }
     else{
       twist_msg.linear.x = int(ref_lin_vel_x*100);
       twist_msg.linear.y = int(ref_lin_vel_y*100);
       twist_msg.angular.z = int(cmd_ang_vel*100);
     }  
-    // cmd_vel_pub_->publish(twist_msg);
-    // RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
+   
 
 }
 void Navigation::flight_data_callback(const gazebo_msgs::msg::ModelStates::SharedPtr msg)
@@ -239,7 +247,7 @@ void Navigation::flight_data_callback(const gazebo_msgs::msg::ModelStates::Share
     this->qz_ = msg->pose[number].orientation.z;
     this->qw_ = msg->pose[number].orientation.w;
     
-    RCLCPP_WARN_STREAM(this->get_logger(), "x " << this->x_); 
+    // RCLCPP_WARN_STREAM(this->get_logger(), "x " << this->x_); 
 
 
     this->odom_started = true;

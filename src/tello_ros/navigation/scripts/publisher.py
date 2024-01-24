@@ -68,7 +68,7 @@ class MinimalPublisher(Node):
 
     def timer_callback(self):
         msg = PoseArray()
-        self.get_logger().info(f"{msg}" )
+        # self.get_logger().info(f"{msg}" )
 
         msg.header.stamp = self.get_clock().now().to_msg()
         # x_list = [0.6, 0.6, 1.2, 1.2, 1.8]

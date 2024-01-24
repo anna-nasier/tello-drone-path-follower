@@ -121,6 +121,11 @@ class ImageSubscriber(Node):
     self.br = CvBridge()
     self.pause_stream = False
     self.publisher_ = self.create_publisher(PoseArray, 'poses3d', 10)
+    timer_period = 0.001  # seconds
+    self.timer = self.create_timer(timer_period, self.timer_callback)
+    self.trajectory_x = []
+    self.trajectory_y = []
+    self.trajectory_z = []
      
    
   def listener_callback(self, data):
@@ -145,18 +150,18 @@ class ImageSubscriber(Node):
             corners = dist([w/2,h/2], corners)
             # print('dist', type(corners), corners.shape)
             copy_corners = corners
-            trajectory_x = []
-            trajectory_y = []
+            self.trajectory_x = []
+            self.trajectory_y = []
             cor = corners[0].tolist()
-            trajectory_x.append(cor[0])
-            trajectory_y.append(cor[1])
+            self.trajectory_x.append(cor[0])
+            self.trajectory_y.append(cor[1])
             for i in corners:
                 x, y = i.ravel()
                 res = dist(i, copy_corners)[:2]
                 cv2.circle(cf_cut, (x, y), 3, 255, -1)
                 if res.shape[0] == 2:
-                  trajectory_x.append(res[1][0])
-                  trajectory_y.append(res[1][1])
+                  self.trajectory_x.append(res[1][0])
+                  self.trajectory_y.append(res[1][1])
                 print(res.shape)
                 for p in res:
                     xd, yd = p.ravel()
@@ -165,24 +170,47 @@ class ImageSubscriber(Node):
             key = cv2.waitKey(1)
             if key == ord('q'):
               self.pause_stream = True
-              trajectory_z = check_colors(copy_cf, trajectory_x, trajectory_y)
-              print(type(trajectory_z[0]))
-              trajectory_x = rescale_x(cf_cut, trajectory_x)
-              trajectory_y = rescale_y(cf_cut, trajectory_y)
+              self.trajectory_z = check_colors(copy_cf, self.trajectory_x, self.trajectory_y)
+              print(type(self.trajectory_z[0]))
+              self.trajectory_x = rescale_x(cf_cut, self.trajectory_x)
+              self.trajectory_y = rescale_y(cf_cut, self.trajectory_y)
               self.get_logger().info(f'Paused stream processing')
-              msg = PoseArray()
-              for i in range(0, len(trajectory_x)):
-                  x, y, z, qx, qy, qz, qw = trajectory_x[i], trajectory_y[i], trajectory_z[i], 0.0, 0.0, 0.0, 1.0 # set Pose values
-                  pose = Pose() # create a new Pose message
-                  pose.position.x, pose.position.y, pose.position.z = x, y, z
-                  pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
-                  msg.poses.append(pose) # add the new Pose object to the PoseArray list
-              self.publisher_.publish(msg)
-              self.get_logger().info(f'Publishing path : {msg}')
+              # msg = PoseArray()
+              # for i in range(0, len(self.trajectory_x)):
+              #     x, y, z, qx, qy, qz, qw = self.trajectory_x[i], self.trajectory_y[i], self.trajectory_z[i], 0.0, 0.0, 0.0, 1.0 # set Pose values
+              #     pose = Pose() # create a new Pose message
+              #     pose.position.x, pose.position.y, pose.position.z = x, y, z
+              #     pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
+              #     msg.poses.append(pose) # add the new Pose object to the PoseArray list
+              # self.publisher_.publish(msg)
+              # self.get_logger().info(f'Publishing path : {msg}')
         cv2.imshow('lines', cf_cut)
         cv2.imshow("camera", cf)
     
+  def timer_callback(self):
+    msg = PoseArray()
+    # self.get_logger().info(f"{msg}" )
 
+    msg.header.stamp = self.get_clock().now().to_msg()
+    # x_list = [0.6, 0.6, 1.2, 1.2, 1.8]
+    # y_list = [0.0, 0.6, 0.6, -0.6, 0.0]
+    # x_list = [0.6, 1.2, 1.8, 1.8, 2.4]
+    # y_list = [0.0, -1.0, 1.6, 0.0, 0.0]
+    # 
+    for i in range(0, len(self.trajectory_x)):
+        x, y, z, qx, qy, qz, qw = self.trajectory_x[i], self.trajectory_y[i], self.trajectory_z[i], 0.0, 0.0, 0.0, 1.0 # set Pose values
+        pose = Pose() # create a new Pose message
+        pose.position.x, pose.position.y, pose.position.z = x, y, z
+        pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
+        msg.poses.append(pose) # add the new Pose object to the PoseArray list
+    # for i in range(5):
+    #     x, y, z, qx, qy, qz, qw = x_list[i], y_list[i], 0.0, 0.0, 0.0, 0.0, 1.0 # set Pose values
+    #     pose = Pose() # create a new Pose message
+    #     pose.position.x, pose.position.y, pose.position.z = x, y, z
+    #     pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
+    #     msg.poses.append(pose) # add the new Pose object to the PoseArray list
+    self.publisher_.publish(msg)
+    self.get_logger().info(f'Publishing path : {msg}')
   
 def main(args=None):
   
