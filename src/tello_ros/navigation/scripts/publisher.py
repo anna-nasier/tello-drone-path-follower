@@ -67,23 +67,23 @@ class MinimalPublisher(Node):
 
 
     def timer_callback(self):
-        msg = PoseArray()
-        # self.get_logger().info(f"{msg}" )
+        # msg = PoseArray()
+        # # self.get_logger().info(f"{msg}" )
 
-        msg.header.stamp = self.get_clock().now().to_msg()
-        # x_list = [0.6, 0.6, 1.2, 1.2, 1.8]
-        # y_list = [0.0, 0.6, 0.6, -0.6, 0.0]
-        x_list = [0.6, 1.2, 1.8, 1.8, 2.4]
-        y_list = [0.0, -1.0, 1.6, 0.0, 0.0]
-        # 
-        for i in range(5):
-            x, y, z, qx, qy, qz, qw = x_list[i], y_list[i], 0.0, 0.0, 0.0, 0.0, 1.0 # set Pose values
-            pose = Pose() # create a new Pose message
-            pose.position.x, pose.position.y, pose.position.z = x, y, z
-            pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
-            msg.poses.append(pose) # add the new Pose object to the PoseArray list
-        self.publisher_.publish(msg)
-        self.get_logger().info('Publishing path : ')
+        # msg.header.stamp = self.get_clock().now().to_msg()
+        # # x_list = [0.6, 0.6, 1.2, 1.2, 1.8]
+        # # y_list = [0.0, 0.6, 0.6, -0.6, 0.0]
+        # x_list = [0.6, 1.2, 1.8, 1.8, 2.4]
+        # y_list = [0.0, -1.0, 1.6, 0.0, 0.0]
+        # # 
+        # for i in range(5):
+        #     x, y, z, qx, qy, qz, qw = x_list[i], y_list[i], 0.0, 0.0, 0.0, 0.0, 1.0 # set Pose values
+        #     pose = Pose() # create a new Pose message
+        #     pose.position.x, pose.position.y, pose.position.z = x, y, z
+        #     pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
+        #     msg.poses.append(pose) # add the new Pose object to the PoseArray list
+        # self.publisher_.publish(msg)
+        # self.get_logger().info('Publishing path : ')
         
         if not self.simulation: #jezeli nie symulacja to pobieramy dane
             data = self.s.recvfrom(1024)[0]

@@ -68,6 +68,10 @@ void Navigation::timer_callback()
 void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg)
 {
     int al = end(msg->poses)-begin(msg->poses); //length calculation
+    if (al == 0 ){
+      RCLCPP_ERROR_STREAM(this->get_logger(),"EMPTY PATCH ");
+      return;
+    }
     RCLCPP_ERROR_STREAM(this->get_logger(),"goal number  = :" << this->start << "-----------------");
     
     if(this->start >= al){
