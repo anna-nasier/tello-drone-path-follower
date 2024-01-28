@@ -115,7 +115,7 @@ class ImageSubscriber(Node):
     super().__init__('image_subscriber')
     self.subscription = self.create_subscription(
       Image, 
-      'image_raw', 
+      'drone1/image_raw', 
       self.listener_callback, 
       10)
     self.subscription

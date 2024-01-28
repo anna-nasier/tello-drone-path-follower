@@ -18,6 +18,10 @@
     <include>
       <uri>model://sun</uri>
     </include>
+
+    <!-- <include>
+      <uri>model://my_ground_plane</uri>
+    </include> -->
     
     <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
       <ros>
@@ -25,6 +29,25 @@
       </ros>
       <!-- <update_rate>0.1</update_rate> -->
     </plugin>
+
+    <model name='trasa'>
+      <static>1</static>
+      <link name='link'>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://trasa/meshes/trasa.dae</uri>
+              <scale>0.52 0.52 0.52</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>0.454742 0 1.15 0 0 -3.14</pose>
+    </model>
+ 
 
   </world>
 </sdf>

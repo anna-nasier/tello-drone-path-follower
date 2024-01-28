@@ -238,12 +238,13 @@ void Navigation::flight_data_callback(const gazebo_msgs::msg::ModelStates::Share
     // this->pitch_= msg->pitch;
     // this->yaw_= msg->yaw;
     int number = 0;
-    if (simulation){number = 1;}
+    if (simulation){number = 2;}
     this->x_ = msg->pose[number].position.x;
     this->y_ = msg->pose[number].position.y;
     this->z_ = msg->pose[number].position.z;
     // RCLCPP_ERROR_STREAM(this->get_logger(),"msg = :" << x_ << y_ <<z_);
     myFile << this->x_ << this->y_ << this->z_ << std::endl;
+    RCLCPP_ERROR_STREAM(this->get_logger(),"msg = x " << this->x_ << "y " << this->y_ << "z "<<this->z_);
 
 
     // this->x_ += msg->vgx*cos(this->yaw_)*time_diff - msg->vgy*sin(this->yaw_)*time_diff;
