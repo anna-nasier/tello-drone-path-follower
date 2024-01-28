@@ -4,9 +4,10 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
-from camsub.find_paper_traj import find_paper
+from camsub.find_paper_traj import find_paper, gamma_correction
 import math
 from geometry_msgs.msg import PoseArray, Pose
+
 
 def dist_from_center(img, point):
    height, width, _ = img.shape
@@ -132,6 +133,7 @@ class ImageSubscriber(Node):
     if not self.pause_stream:
       self.get_logger().info('Receiving video frame')
       cf = self.br.imgmsg_to_cv2(data)
+      cf = gamma_correction(cf)
       cf_cut, is_paper = find_paper(cf)
       copy_cf = cf_cut.copy()
       self.get_logger().info(f'{cf_cut.shape[0], cf_cut.shape[1]}')
