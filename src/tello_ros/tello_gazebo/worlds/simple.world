@@ -30,6 +30,8 @@
       <!-- <update_rate>0.1</update_rate> -->
     </plugin>
 
+    <!-- added the trasa file withe the image  -->
+
     <model name='trasa'>
       <static>1</static>
       <link name='link'>

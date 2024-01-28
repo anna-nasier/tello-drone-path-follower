@@ -4,10 +4,10 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
-from camsub.find_paper_traj import find_paper, gamma_correction
+from camsub.find_paper_traj import find_paper
 import math
 from geometry_msgs.msg import PoseArray, Pose
-
+from camsub.find_paper_traj import find_paper, gamma_correction
 
 def dist_from_center(img, point):
    height, width, _ = img.shape

@@ -38,14 +38,10 @@ class MinimalPublisher(Node):
         super().__init__('minimal_publisher')
         self.publisher_ = self.create_publisher(PoseArray, 'poses3d', 10)
         self.publisher_gz = self.create_publisher(ModelStates, '/gazebo/model_states', 10)
-        # gazebo_msgs::msg::ModelStates>("/gazebo/model_states"
         timer_period = 0.001  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
         self.simulation = True
-        # def optitrack(queue: Queue, run_process: Value):
-        # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        #     s.bind(('0.0.0.0', int(CLIENT_PORT)))
         
         if not self.simulation:
             # values
@@ -61,14 +57,11 @@ class MinimalPublisher(Node):
             # bind socket
             self.s.bind((ip,port))
 
-            # add socket to multicast group
-            # self.s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-
 
 
     def timer_callback(self):
         # msg = PoseArray()
-        # # self.get_logger().info(f"{msg}" )
+        # self.get_logger().info(f"{msg}" )
 
         # msg.header.stamp = self.get_clock().now().to_msg()
         # # x_list = [0.6, 0.6, 1.2, 1.2, 1.8]
@@ -89,18 +82,11 @@ class MinimalPublisher(Node):
             data = self.s.recvfrom(1024)[0]
             data1 = json.loads(data)
             # recieve data
-            # data, addr = s.recvfrom(10240)
                 
-            # print data
-            # data= {'rigid_bodies': 1, 'QDrone': [1, -0.545882, 0.010438, 0.115418, -0.001515, -0.000244, -0.000377]}
             QDrone_values = data1["Tello"]
             self.get_logger().info(f'Recived data :{QDrone_values} ')
             # Przypisanie wartości do osobnych zmiennych
-            # Przypisanie wartości do osobnych zmiennych
             a, b, c, d, e, f, g, _ = QDrone_values
-            # [a, b, c, d, e, f, g, h, i, j, k, l] = struct.unpack('ffffffffffff', data)
-            # self.get_logger().info(f" a {a}")
-            # self.get_logger().info(f" b {b}")
 
             widocznosc = a
             x = b
@@ -109,11 +95,6 @@ class MinimalPublisher(Node):
             roll = e
             pitch = f
             yaw = g
-            # roll = -h
-            # yaw = i
-            # pitch = -j
-            # bodyID = k
-            # framecount = l
 
             quat = get_quaternion_from_euler(roll, pitch, yaw)
             qx = quat[0]
@@ -124,14 +105,9 @@ class MinimalPublisher(Node):
             self.get_logger().info(f'x = {x}, y = {y}, z = {z} \n qx = {qx}, qy = {qy}, qz = {qz}, qw = {qw} \n ')
 
             msg_gz = ModelStates()
-            # print(msg_gz)
-            # self.get_logger().info(f"{msg_gz}" )
-            # self.get_logger().info(f"{msg_gz.pose}" )
 
             if widocznosc:
-                # msg_gz.pose
                 pose_gz = Pose() # create a new Pose message
-                
 
                 pose_gz.position.x = float(x)
                 pose_gz.position.y = float(y)
@@ -160,16 +136,6 @@ def main(args=None):
 
     rclpy.shutdown()
 
-
-    # minimal_publisher = MinimalPublisher()
-
-    # rclpy.spin(minimal_publisher)
-
-    # # Destroy the node explicitly
-    # # (optional - otherwise it will be done automatically
-    # # when the garbage collector destroys the node object)
-    # minimal_publisher.destroy_node()
-    # rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -1,232 +1,50 @@
-import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
+# import the required library 
+import numpy as np 
 import cv2
-import numpy as np
-from find_paper_traj import find_paper
-import math
-from geometry_msgs.msg import PoseArray, Pose
+from matplotlib import pyplot as plt 
 
-def dist_from_center(img, point):
-   height, width, _ = img.shape
-   center = [width/2, height/2] 
-   cv2.rectangle(img, (int(width*0.1), int(height*0.1)), (int(width*0.8), int(height*0.8)), (255, 0, 0), 3, cv2.LINE_AA)
-   pt1 = point[0]
-   dist_x = width - center[0]
-   dist_y = height - center[1]
-   dist_xy = math.sqrt((center[0] - width)**2 + (center[1]-height)**2)
-   dist_pt1 = math.sqrt((pt1[0]- center[0])**2 + (pt1[1] - center[1])**2)
-   if dist_pt1/dist_xy > 0.7:
-      return False
-   elif abs(pt1[0]-center[0])/dist_x > 0.8 or abs(pt1[1]-center[1]) / dist_y > 0.8:
-     return False
-   else:
-      return True
-   
-  
 def dist(node, nodes):
     nodes = np.asarray(nodes)
     dist_2 = np.sum((nodes - node)**2, axis=1)
     order = np.argsort(dist_2)
     return nodes[order]
+# read the image 
+img = cv2.imread('test2.png')
 
-def gamma_correction(image, gamma=1.5):
-    gamma_inv = 1.0 / gamma
-    look_up_table = np.array([((i / 255.0) ** gamma_inv) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
-    gamma_corrected = cv2.LUT(image, look_up_table)
-    return gamma_corrected
+# convert image to gray scale image
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-# def check_colors(img, pointsx, pointsy): 
-#   traj_z = []
-#   for P in range(0, len(pointsx)): 
-#     x = pointsx[P]
-#     y = pointsy[P]
-#     B = img[y][x][0]
-#     G = img[y][x][1]
-#     R = img[y][x][2]
-#     colors = [B, G, R]
-#     color = colors.index(max(colors))
-#     # print('B', img[y][x][0], 'G', img[y][x][1], 'R', img[y][x][2])
-#     # print(color)
-#     if color == 0: 
-#       # blue z = 0.5
-#       traj_z.append(0.5)
-#     if color == 1: 
-#       # green z = 1
-#       traj_z.append(1)
-#     if color == 2: 
-#       # red z = 1.5
-#       traj_z.append(1.5)
-#   print(traj_z)
+# detect corners with the goodFeaturesToTrack function.
+corners = cv2.goodFeaturesToTrack(gray, 150, 0.01, 15)
+corners = np.intp(corners)
+corners = np.resize(corners,(41,2))
+h, w, _ = img.shape
+print((h,w))
 
-def check_colors(img, pointsx, pointsy): 
-  hsv = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2HSV)
-  traj_z = []
-  for P in range(0, len(pointsx)): 
-    x = pointsx[P]
-    y = pointsy[P]
-    h, _, _ = hsv[y,x]
-    red_low1 = 0
-    red_high1 = 15
+corners = corners[
+    np.logical_and(
+        np.logical_and(corners[:,1] > 60, corners[:,1] < h-100),
+        np.logical_and(corners[:,0] > 60, corners[:,0] < w-100)
+    )
+]
+corners = dist([w/2,h/2], corners)
 
-    red_low2 = 170
-    red_high2 = 180
-
-    green_low = 30
-    green_high = 80
-
-    blue_low = 90
-    blue_high = 130
-
-    if blue_low <= h <= blue_high:
-      # blue z = 0.5
-      traj_z.append(0.5)
-    elif green_low <= h <= green_high: 
-      # green z = 1
-      traj_z.append(1.0)
-    elif red_low1 <= h <= red_high1 or red_low2 <= h <= red_high2:
-      # red z = 1.5
-      traj_z.append(1.5)
-    else: 
-      traj_z.append(1.0)
-  return traj_z
-
-def rescale_x(img, points): 
-  _, w, _ = img.shape
-  center = w/2
-  room = 3
-  ratio = room / w
-  scaled = []
-  for p in points: 
-    p1 = (p - center) * ratio
-  return scaled
-
-def rescale_y(img, points): 
-  h, _, _ = img.shape
-  room = 4
-  center = h/2
-  ratio = room / h
-  scaled = []
-  for p in points: 
-    p1 = (p - center) * ratio
-    scaled.append(p1)
-  return scaled
-
-# class ImageSubscriber(Node):
-#   def __init__(self):
-#     super().__init__('image_subscriber')
-#     self.subscription = self.create_subscription(
-#       Image, 
-#       'image_raw', 
-#       self.listener_callback, 
-#       10)
-#     self.subscription
-#     self.br = CvBridge()
-#     self.pause_stream = False
-#     self.publisher_ = self.create_publisher(PoseArray, 'poses3d', 10)
-#     timer_period = 0.001  # seconds
-#     self.timer = self.create_timer(timer_period, self.timer_callback)
-#     self.trajectory_x = [0.0]
-#     self.trajectory_y = [0.0]
-#     self.trajectory_z = [0.0]
-#     self.msg = PoseArray()
-
-cf = cv2.imread('/tello_ws/src/camsub/camsub/trasa.png')
-cf = gamma_correction(cf)
-cf_cut, is_paper = find_paper(cf)
-copy_cf = cf_cut.copy()
-if is_paper:
-  grey = cv2.cvtColor(cf_cut.copy(), cv2.COLOR_BGR2GRAY)
-  corners = cv2.goodFeaturesToTrack(grey, 30, 0.01, 10)
-  cv2.imshow('paper', cf_cut)
-  if corners is not None:
-    corners = corners.astype(int)
-    corners = [c for c in corners if dist_from_center(cf_cut, c)]
-    # corners = np.unique(corners, axis=0)
-    # self.get_logger().info(f'unique: {corners}')
-    if len(corners) > 1:
-      corners = np.intp(corners)
-      corners = np.reshape(corners, (-1, 2))
-      h, w, _ = cf_cut.shape
-      corners = dist([w/2,h/2], corners)
-      # print('dist', type(corners), corners.shape)
-      copy_corners = corners
-      trajectory_x = []
-      trajectory_y = []
-      cor = corners[0].tolist()
-      trajectory_x.append(cor[0])
-      trajectory_y.append(cor[1])
-      for i in corners:
-          x, y = i.ravel()
-          res = dist(i, copy_corners)[:2]
-          cv2.circle(cf_cut, (x, y), 3, 255, -1)
-          if res.shape[0] == 2:
-            trajectory_x.append(res[1][0])
-            trajectory_y.append(res[1][1])
-          print(res.shape)
-          for p in res:
-              xd, yd = p.ravel()
-              cv2.line(cf_cut,(x,y), (xd,yd), [255,0,0], 1)
-          copy_corners = np.delete(copy_corners,0,0)
-    #   key = cv2.waitKey(1)
-    #   if key == ord('q'):
-        # pause_stream = True
-    trajectory_z = check_colors(copy_cf, trajectory_x, trajectory_y)
-    print(type(trajectory_z[0]))
-    trajectory_x = rescale_x(cf_cut, trajectory_x)
-    trajectory_y = rescale_y(cf_cut, trajectory_y)
-        # get_logger().info(f'Paused stream processing')
-        # msg = PoseArray()
-        # for i in range(0, len(self.trajectory_x)):
-        #     x, y, z, qx, qy, qz, qw = self.trajectory_x[i], self.trajectory_y[i], self.trajectory_z[i], 0.0, 0.0, 0.0, 1.0 # set Pose values
-        #     pose = Pose() # create a new Pose message
-        #     pose.position.x, pose.position.y, pose.position.z = x, y, z
-        #     pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
-        #     self.msg.poses.append(pose) # add the new Pose object to the PoseArray list
-        # self.publisher_.publish(msg)
-        # self.get_logger().info(f'Publishing path : {msg}')
-
-    cv2.imshow('lines', cf_cut)
-    cv2.waitKey(0)
-else:
-    print('paper not found')
-cv2.imshow("camera", cf)
-cv2.waitKey(0)
+# iterate through each corner
+# making a circle at each point that we think is a corner
+copy_corners = corners
+trajectory = []
+cock = corners[0].tolist()
+print(type(cock))
+trajectory.append(cock)
+for i in corners:
+    x, y = i.ravel()
+    res = dist(i, copy_corners)[:2]
+    cv2.circle(img, (x, y), 3, 255, -1)
+    for p in res:
+        trajectory.append(p.tolist())
+        xd, yd = p.ravel()
+        cv2.line(img,(x,y), (xd,yd), [255,0,0], 1)
+    copy_corners = np.delete(copy_corners,0,0)
     
-#   def timer_callback(self):
-    # msg = PoseArray()
-    # # self.get_logger().info(f"{msg}" )
-
-    # msg.header.stamp = self.get_clock().now().to_msg()
-    # # x_list = [0.6, 0.6, 1.2, 1.2, 1.8]
-    # # y_list = [0.0, 0.6, 0.6, -0.6, 0.0]
-    # # x_list = [0.6, 1.2, 1.8, 1.8, 2.4]
-    # # y_list = [0.0, -1.0, 1.6, 0.0, 0.0]
-    # # 
-    # for i in range(0, len(self.trajectory_x)):
-    #     x, y, z, qx, qy, qz, qw = self.trajectory_x[i], self.trajectory_y[i], self.trajectory_z[i], 0.0, 0.0, 0.0, 1.0 # set Pose values
-    #     pose = Pose() # create a new Pose message
-    #     pose.position.x, pose.position.y, pose.position.z = x, y, z
-    #     pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
-    #     msg.poses.append(pose) # add the new Pose object to the PoseArray list
-    # # for i in range(5):
-    # #     x, y, z, qx, qy, qz, qw = x_list[i], y_list[i], 0.0, 0.0, 0.0, 0.0, 1.0 # set Pose values
-    # #     pose = Pose() # create a new Pose message
-    # #     pose.position.x, pose.position.y, pose.position.z = x, y, z
-    # #     pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = qx, qy, qz, qw
-    # #     msg.poses.append(pose) # add the new Pose object to the PoseArray list
-#     self.publisher_.publish(self.msg)
-#     self.get_logger().info(f'Publishing path : {self.msg}')
-  
-# def main(args=None):
-  
-#   rclpy.init(args=args)
-#   image_subscriber = ImageSubscriber()
-#   rclpy.spin(image_subscriber)
-
-#   image_subscriber.destroy_node()
-#   rclpy.shutdown()
-  
-# if __name__ == '__main__':
-#   main()
+print(trajectory)
+plt.imshow(img), plt.show()

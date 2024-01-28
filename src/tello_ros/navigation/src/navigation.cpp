@@ -1,16 +1,14 @@
 #include "navigation/navigation.hpp"
 // #include <tf2_eigen/tf2_eigen.hpp>
-#include <fstream>
+
 
 
 Navigation::Navigation() : Node("navigation_node")
 {
     index_ = 0;
-    std::ofstream myFile("optitrack.csv");
 
     declare_parameter<std::string>("topics.path_topic_name", "path_topic_name_");
 
-    // auto client = node->create_client<tello_msgs::srv::TelloAction>("/tello_action");
 
     path_topic_name_ = get_parameter("topics.path_topic_name").as_string();
     if (simulation){
@@ -27,11 +25,6 @@ Navigation::Navigation() : Node("navigation_node")
 
     // Send the request to the service and wait for the response
     auto result_future = client->async_send_request(request);
-    // if (result_future.get()->success) {
-    //   RCLCPP_INFO(this->get_logger(), "Command 'takeoff' sent successfully.");
-    // } else {
-    //   RCLCPP_ERROR(this->get_logger(), "Failed to send 'takeoff' command.");
-    // }
  
     timer_ = this->create_wall_timer(
       100ms, std::bind(&Navigation::timer_callback, this));
@@ -49,20 +42,13 @@ Navigation::Navigation() : Node("navigation_node")
 void Navigation::timer_callback()
     {
       if (!simulation){
-        //   cmd_vel_pub_->publish(twist_msg);
-        // RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
+        // send move request to the drone 
         auto request = std::make_shared<tello_msgs::srv::TelloAction::Request>();
         int x = twist_msg.linear.x;
         int y = twist_msg.linear.y;
-        // std::string str = "rc 0 " +  std::to_string(x) +  " 0 0";
-        // std::string str = "rc "+  std::to_string(y*-1) + " 0 0 0";
         std::string str = "rc "+  std::to_string(y*-1) + " " +  std::to_string(x) +  " 0 0";
         request->cmd = str;
         auto result_future = client->async_send_request(request);
-        // auto message = std_msgs::msg::String();e?
-        // message.data = "Hello, world! " + std::to_string(count_++);
-        // RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-        // cmd_vel_pub_->publish(message);
       }
     }
 
@@ -89,12 +75,11 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
         return;
     }
     // RCLCPP_INFO(this->get_logger(), "Path Callback !!!");
-    // following_path_ = std::move(msg);
-    // path_received_ = true;
     RCLCPP_ERROR(this->get_logger(), "PATH RECEIVED !!!"); 
     // relative pose to target 
     double pose_x = msg->poses[start].position.x - this->x_;
     double pose_y = msg->poses[start].position.y - this->y_;
+    double pose_z = msg->poses[start].position.z - this->z_;
     
     tf2::Quaternion q_ = tf2::Quaternion(msg->poses[start].orientation.x, msg->poses[start].orientation.y, msg->poses[start].orientation.z, msg->poses[start].orientation.w);
     double roll, pitch, yaw;
@@ -118,6 +103,7 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
 
     RCLCPP_ERROR_STREAM(this->get_logger(),"remaining distance x = :" << pose_x);
     RCLCPP_ERROR_STREAM(this->get_logger(),"remaining distance y = :" << pose_y);
+    RCLCPP_ERROR_STREAM(this->get_logger(),"remaining distance z = :" << pose_z);
 
 
     double k = 0.7;
@@ -138,7 +124,6 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     if(scale > 1){scale =1;}
     // im mniejsza odleglosc tym bardziej proste pole 
     // in wiekszy kat tym badziej zakzywione pole <-----------
-    // RCLCPP_INFO_STREAM(this->get_logger(), "scale: "<< scale );
 
     double d_norm = (x1*cos(pose_yaw)+y1*sin(pose_yaw))/sqrt(x1*x1+y1*y1);
     double dhx = -cos(pose_yaw)-k*d_norm;
@@ -150,21 +135,20 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
     double msg_dh_y = scale*dhy + y1*scaling_factor*d_norm;
     //vector sterujacy potem przepisuje,y na predkosci 
 
-    // Eigen::Vector2d vec_h(msg_h_x, msg_h_x);//////////////////////////////////////////////////////////////////
-    // vec_h.normalize();
-    // double h_norm = vec_h.norm();
     double projection = msg_h_x*cos(pose_yaw) + msg_h_y*sin(pose_yaw); 
     
   
     projection = std::max(projection, 0.1);
     double ref_lin_vel_x = std::max(0.01, 0.25*projection);     
     double ref_lin_vel_y = std::max(0.01, 0.25*projection);     
+    double ref_lin_vel_z = std::max(0.01, 0.25*projection);     
     ref_lin_vel_x = pose_x;
     ref_lin_vel_y = pose_y;
+    ref_lin_vel_z = pose_z;
     
     double max_vel_lin = 0.15;
     if (simulation){
-      max_vel_lin = 0.02;
+      max_vel_lin = 0.01;
     }
     if(ref_lin_vel_x > max_vel_lin)
       ref_lin_vel_x = max_vel_lin;
@@ -174,13 +158,15 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
       ref_lin_vel_y = max_vel_lin;
     if(ref_lin_vel_y < -max_vel_lin)
       ref_lin_vel_y = -max_vel_lin;  
+    if(ref_lin_vel_z > max_vel_lin)
+      ref_lin_vel_z = max_vel_lin;
+    if(ref_lin_vel_z < -max_vel_lin)
+      ref_lin_vel_z = -max_vel_lin;  
 
     
     //////////
     
     double k_a_modulated = 2.0;
-    // double theta_a = (atan2(vec_h.y(), vec_h.x()));
-
     double dtheta_a = ref_lin_vel_x*(msg_dh_y*msg_h_x - msg_h_y*msg_dh_x)/(std::sqrt(msg_h_x) + std::sqrt(msg_h_y));      
 
 
@@ -193,7 +179,7 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
 
     double max_vel = 0.15;
     if (simulation){
-      max_vel = 0.02;
+      max_vel = 0.01;
     }
     if(cmd_ang_vel > max_vel)
       cmd_ang_vel = max_vel;
@@ -203,16 +189,16 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
 
 
 
-    if(pose_x < 0.05 && pose_x > - 0.05 && pose_y < 0.04 && pose_y > -0.04){
+    if(pose_x < 0.02 && pose_x > - 0.02 && pose_y < 0.02 && pose_y > -0.02 && pose_z < 0.02 && pose_z > -0.02){
         this->start++;
     }
 
     double ref_lin_vel_x_pid = pid.calculate(0, ref_lin_vel_x);
     double ref_lin_vel_y_pid = pid.calculate(0, ref_lin_vel_y);
-    // geometry_msgs::msg::Twist twist;
     if (simulation){
       twist_msg.linear.x = ref_lin_vel_x;
       twist_msg.linear.y = ref_lin_vel_y;
+      twist_msg.linear.z = ref_lin_vel_z;
       twist_msg.angular.z = cmd_ang_vel;
       cmd_vel_pub_->publish(twist_msg);
       RCLCPP_INFO_STREAM(this->get_logger(), "publishing drone cmd_vel " );
@@ -228,39 +214,26 @@ void Navigation::pathCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg
 void Navigation::flight_data_callback(const gazebo_msgs::msg::ModelStates::SharedPtr msg)
 {
     // calculate pose base on flight data, starts in 0,0,0
-    // RCLCPP_ERROR(this->get_logger(), "flight data callback !!!");
-    // RCLCPP_ERROR_STREAM(this->get_logger(),"msg = :" << msg->pose);
 
     rclcpp::Time now = this->get_clock()->now();
     // double time_diff = (now - rclcpp::Time(msg->header.stamp)).nanoseconds()/1e9;
 
-    // this->roll_= msg->roll;
-    // this->pitch_= msg->pitch;
-    // this->yaw_= msg->yaw;
     int number = 0;
     if (simulation){number = 2;}
     this->x_ = msg->pose[number].position.x;
     this->y_ = msg->pose[number].position.y;
     this->z_ = msg->pose[number].position.z;
-    // RCLCPP_ERROR_STREAM(this->get_logger(),"msg = :" << x_ << y_ <<z_);
-    myFile << this->x_ << this->y_ << this->z_ << std::endl;
     RCLCPP_ERROR_STREAM(this->get_logger(),"msg = x " << this->x_ << "y " << this->y_ << "z "<<this->z_);
 
 
-    // this->x_ += msg->vgx*cos(this->yaw_)*time_diff - msg->vgy*sin(this->yaw_)*time_diff;
-    // this->y_ += msg->vgx*sin(this->yaw_)*time_diff + msg->vgy*cos(this->yaw_)*time_diff;
     this->qx_ = msg->pose[number].orientation.x;
     this->qy_ = msg->pose[number].orientation.y;
     this->qz_ = msg->pose[number].orientation.z;
     this->qw_ = msg->pose[number].orientation.w;
     
-    // RCLCPP_WARN_STREAM(this->get_logger(), "x " << this->x_); 
 
 
     this->odom_started = true;
 
 
 }
-// odometry callback{
-//     code here 
-// }

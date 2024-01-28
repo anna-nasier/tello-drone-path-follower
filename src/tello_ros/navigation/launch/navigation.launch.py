@@ -15,25 +15,7 @@ def generate_launch_description():
             executable='cpp_executable',
             name='navigation_node'
         )
-    # navigation_cmd = Node(
-    #         package='navigation',
-    #         executable='navigation_node',
-    #         name='navigation_node',
-    #         parameters=[{'use_sim_time': True}],
-    #         output='screen')
-    
-    # ld = LaunchDescription(
-    #     Node(
-    #         package='navigation',
-    #         namespace='nav1',
-    #         executable='publisher.py',
-    #         name='pub'
-    #     )
-    # )    
 
-    # ld.add_action(navigation_cmd)
-
-    # return ld
     composable_node = ComposableNode(
         name='navigation_node',
         package='navigation', plugin='Navigation',
@@ -49,10 +31,9 @@ def generate_launch_description():
         # prefix="xterm -e gdb -ex=r --args"
     )
     
+    # uncomment the pu one for the real robot 
     return launch.LaunchDescription([
         DeclareLaunchArgument("use_multithread", default_value="false"), # changed from true 
-        # container,
         # pub,
         nav
-        # map_to_map_optitrack
         ])
