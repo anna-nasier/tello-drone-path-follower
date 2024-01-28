@@ -1,11 +1,12 @@
 #include "navigation/navigation.hpp"
 // #include <tf2_eigen/tf2_eigen.hpp>
-
+#include <fstream>
 
 
 Navigation::Navigation() : Node("navigation_node")
 {
     index_ = 0;
+    std::ofstream myFile("optitrack.csv");
 
     declare_parameter<std::string>("topics.path_topic_name", "path_topic_name_");
 
@@ -242,6 +243,7 @@ void Navigation::flight_data_callback(const gazebo_msgs::msg::ModelStates::Share
     this->y_ = msg->pose[number].position.y;
     this->z_ = msg->pose[number].position.z;
     // RCLCPP_ERROR_STREAM(this->get_logger(),"msg = :" << x_ << y_ <<z_);
+    myFile << this->x_ << this->y_ << this->z_ << std::endl;
 
 
     // this->x_ += msg->vgx*cos(this->yaw_)*time_diff - msg->vgy*sin(this->yaw_)*time_diff;

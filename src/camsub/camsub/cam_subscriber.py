@@ -185,7 +185,7 @@ class ImageSubscriber(Node):
               # self.publisher_.publish(msg)
               # self.get_logger().info(f'Publishing path : {msg}')
         cv2.imshow('lines', cf_cut)
-        cv2.imshow("camera", cf)
+      cv2.imshow("camera", cf)
     
   def timer_callback(self):
     # msg = PoseArray()
