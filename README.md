@@ -93,11 +93,9 @@ As you can see in the pictures and the message, with the **quality of the simula
 
 In simulation, the drone reaches the trajectory points that was sent to it by **camsub** in all 3 coordinates. 
 
-View from top to see the x and y coordinates clearly: 
-![](https://drive.google.com/file/d/1jdaslfaNUraJbmPx87iqL_ku00ukcpt-/view?usp=sharing)
+View from top to see the x and y coordinates clearly: https://drive.google.com/file/d/1jdaslfaNUraJbmPx87iqL_ku00ukcpt-/view?usp=sharing
 
-View from the side to see the movement in Z: 
-![](https://drive.google.com/file/d/1YaNzkGx1QRBJ2it91UxRtMOOUcMzVdCi/view?usp=sharing)
+View from the side to see the movement in Z: https://drive.google.com/file/d/1YaNzkGx1QRBJ2it91UxRtMOOUcMzVdCi/view?usp=sharing
 
 ## Usage 
 
@@ -125,7 +123,7 @@ If everything is up and running, the drone should starting to move after pressin
 ## Possible project expansion and improvement
 
 ### Vision 
-* add a nearest neighbour port sorting 
+* add a nearest neighbour point sorting 
 * add a starting point recognition - possibly a mark on the paper, like a dot or a cross 
 * trajectory orientation recognition - currently the trajectory will be read depending on the way you hold the paper to the camera
 
