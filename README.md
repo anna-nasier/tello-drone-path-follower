@@ -17,9 +17,14 @@ To setup the docker container go into `docker/` directory and type into the term
 
 ### Python 
 
-To install necessary python packages type this into the terminal in your docker container 
+Install python packages in your docker: 
 
-	`pip install -r requirements.txt` 
+```
+sudo apt-get install ros-(DISTRO)-cv-bridge
+```
+```
+pip install -r requirements.txt
+```
 
 ## Scope of work 
 
