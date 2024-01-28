@@ -25,6 +25,9 @@ To install necessary python packages type this into the terminal in your docker 
 
 Intended scope of work is to implement
 * a **navigation system** based on potential vector fields with position and orientation feedback from Optitrack 
+
+# MAJA napisz tu podpunkty do nawigacji
+
 * a **machine vision system** that 
   * will recognise a piece of paper and the flying zone marked with black outline 
   * recognise the trajectory lines, where the colors of the line are indicators for the z axis 
@@ -39,6 +42,8 @@ Machine vision realised by Anna Nasierowska. We both helped each other and had t
 We realised most of the intended workload, but for simple cases and some initial conditions required. 
 
 First of all, all the code is for ROS2. We communicate with drone through ROS2 nodes in two packages - navigation and camsub. 
+
+## Vision 
 
 **Camsub** is a python package with a subscriber that listens to the camera image from the drone, which is under the `image_raw` topic. It takes each frame and checks for the piece of paper with the flying zone marked using opencv and opencv bridge for converting the image to a numpy array. 
 
@@ -62,10 +67,71 @@ For color recognition, the value of the hue channel is thresholded in HSV in the
 
 ### Using the trajectory for navigation 
 
-The points are published in 3 lists - one for each axis. 
+The points are published in 3 lists - one for each axis, under topic `poses3d` in messages of type `PoseArray`. 
+
+### Results 
+
+This is a drawing of an exemplary trajectory that can be printed: 
+![](drawing.png)
+This is the drawing imported to gazebo, viewed through the **simulated** drone on rviz: 
+![](trasa_rviz.png)
+And this is the resulting trajectory drawn on the camera image: 
+![](trajectory.png)
+
+Published message: 
+
+```
+[cam_subscriber-1] [INFO] [1706470355.335800852] [image_subscriber]: Publishing path : geometry_msgs.msg.PoseArray(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=0, nanosec=0), frame_id=''), poses=[geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=-0.040625, y=-0.061111111111111116, z=1.5), orientation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)), geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.1875, y=-0.061111111111111116, z=0.5), orientation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)), geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.35000000000000003, y=-0.061111111111111116, z=0.5), orientation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)), geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.509375, y=-0.07222222222222223, z=1.0), orientation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)), geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.625, y=-0.5444444444444445, z=1.0), orientation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)), geometry_msgs.msg.Pose(position=geometry_msgs.msg.Point(x=0.7781250000000001, y=-0.55, z=1.5), orientation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0))])
+```
+As you can see in the pictures and the message, with the **quality of the simulated drone camera** which doesn't cause issues related to framerate, noise and registered color saturation, **the colors are recoginized** and transformed into Z coordinates accordingly.
 
 ## Navigation 
 
+# Maja napisz tu jakiś podobny opis do tego mojego z wizji wyżej
+
+### Results 
+
+In simulation, the drone reaches the trajectory points that was sent to it by **camsub** in all 3 coordinates. 
+
+View from top to see the x and y coordinates clearly: 
+![](https://drive.google.com/file/d/1jdaslfaNUraJbmPx87iqL_ku00ukcpt-/view?usp=sharing)
+
+View from the side to see the movement in Z: 
+![](https://drive.google.com/file/d/1YaNzkGx1QRBJ2it91UxRtMOOUcMzVdCi/view?usp=sharing)
+
+## Usage 
+
+To be able to control the drone through the navigation package and view the camera view from the drone, you need to run teleop.
+```
+ros2 launch tello_driver teleop_launch.py
+```
+
+To see the path that was found from the drone camera, turn on **camsub** in the setup docker.
+
+
+```
+ros2 launch camsub camsub.launch.py
+```
+
+When you see that the paper shown to the drone is in frame and the trajectory found is satisfying, press 'q' in the window with the path drawn to send the trajectory to navigation package. 
+
+To run navigation: 
+```
+ros2 launch navigation navigation.launch.py
+```
+
+If everything is up and running, the drone should starting to move after pressing 'q'. 
+
+## Possible project expansion and improvement
+
+### Vision 
+* add a nearest neighbour port sorting 
+* add a starting point recognition - possibly a mark on the paper, like a dot or a cross 
+* trajectory orientation recognition - currently the trajectory will be read depending on the way you hold the paper to the camera
+
+### Navigation 
+
+# MAJA napisz tu co poprawić w nawigacji można
 
 ### Credits
 
