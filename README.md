@@ -29,9 +29,11 @@ pip install -r requirements.txt
 ## Scope of work 
 
 Intended scope of work is to implement
-* a **navigation system** based on potential vector fields with position and orientation feedback from Optitrack 
-
-# MAJA napisz tu podpunkty do nawigacji
+* a **navigation system** that 
+  * is based on potential vector fields with position and orientation feedback from Optitrack 
+  * receives one trajectory from the machine vision system and processes it
+  * effectively calculates the difference in values ​​and, based on this, computes the vector field
+  * observes the robot's position and sends a control signal based on the feedback
 
 * a **machine vision system** that 
   * will recognise a piece of paper and the flying zone marked with black outline 
@@ -92,7 +94,13 @@ As you can see in the pictures and the message, with the **quality of the simula
 
 ## Navigation 
 
-# Maja napisz tu jakiś podobny opis do tego mojego z wizji wyżej
+### VFO
+
+Vector Field Orientation (VFO) for drone control is a sophisticated method of navigating and controlling drones using a vector field approach. This technique involves creating a virtual field of vectors, where each vector represents a direction and magnitude of force. The drone navigates by aligning itself with these vectors. The system creates a virtual field around the drone, with vectors indicating the direction and strength of the desired movement. This field dynamically adjusts based on the drone's current position, destination, and any obstacles in its path. As the drone moves, the vector field updates in real-time. This allows for smooth navigation around obstacles and efficient pathfinding towards the destination. Vector Field Orientation provides a highly effective and efficient way to control drones, especially in applications requiring high precision and adaptability.
+
+### Control 
+
+To control the drone in simulation we used a topic connected to the gazebo ` /drone1/cmd_vel` , which is sent at a frequency of 100 hz. For the real drone control, you have to change the value of the bool "simulation" variable to false and then the node sends request to the `/tello_action` service with the control velocity. 
 
 ### Results 
 
@@ -134,7 +142,9 @@ If everything is up and running, the drone should starting to move after pressin
 
 ### Navigation 
 
-# MAJA napisz tu co poprawić w nawigacji można
+* Ensure that PID tuning instructions are well-documented, including the purpose of PID controllers in the project, the parameters involved, and their effects.
+* Provide sample PID configurations and explain their use cases.
+* Better use of computational resources and faster and more effective transfer of variables.
 
 ### Credits
 
