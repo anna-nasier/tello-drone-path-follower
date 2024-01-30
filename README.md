@@ -100,7 +100,7 @@ Vector Field Orientation (VFO) for drone control is a sophisticated method of na
 
 ### Control 
 
-To control the drone in simulation we used a topic connected to the gazebo ` /drone1/cmd_vel` , which is sent at a frequency of 100 hz. For the real drone control, you have to change the value of the bool "simulation" variable to false and then the node sends request to the `/tello_action` service with the control velocity. 
+To control the drone in simulation we used a topic connected to the gazebo ` /drone1/cmd_vel` , which is sent at a frequency of 10Hz. For the real drone control, you have to change the value of the bool "simulation" variable to false and then the node sends request to the `/tello_action` service with the control velocity. 
 
 ### Results 
 
