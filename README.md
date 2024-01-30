@@ -2,8 +2,8 @@
  The goal of this project is to develop a drone control system that enables precise and autonomous navigation along a predefined trajectory drawn on a physical piece of paper. Using computer vision and ROS, the system will interpret the trajectory markings which are assumed to be red, green and blue lines on a field marked with black outline, allowing the drone to follow the designated path within a defined coordinate system. This solution aims to bridge the gap between manual input and automated drone navigation, showcasing the potential for intuitive and user-friendly control interfaces in the field of unmanned aerial vehicles.
 ## Enviroment setup 
 
-In the physical environment, we use DJJ Ryze Tello drone with motion capture system Optitrack in PUT Poznań laboratory and a computer with code commited on this repo. 
-The computer is connected to the drone through it's WIFI and Optitrack coordinates are sent to ROS navigation package by ethernet cable and a DHCP protocol. 
+In the physical environment, we use DJJ Tello EDU drone with motion capture system Optitrack in PUT laboratory and a computer with code commited on this repo. 
+The computer is connected to the drone through it's WIFI and Optitrack coordinates are sent to ROS navigation package by ethernet cable with static IP protocol. 
 
 For the virtual enviroment and simulation, we use a docker container with Gazebo and ROS2 Foxy on Ubuntu 20.04. Dockerfile and docker-compose files are available in the `docker` folder. 
 
@@ -109,6 +109,8 @@ In simulation, the drone reaches the trajectory points that was sent to it by **
 View from top to see the x and y coordinates clearly: https://drive.google.com/file/d/1jdaslfaNUraJbmPx87iqL_ku00ukcpt-/view?usp=sharing
 
 View from the side to see the movement in Z: https://drive.google.com/file/d/1YaNzkGx1QRBJ2it91UxRtMOOUcMzVdCi/view?usp=sharing
+
+The trajectory is achieved, but it's mirrored in y axis and rotated by 90 degrees regarding the camera image coordinates. 
 
 ## Usage 
 
